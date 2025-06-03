@@ -88,7 +88,7 @@ elif choice == "Add Single Batch":
         date = st.date_input("Date")
         grain = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1, format="%.2f")
         water = st.number_input("Water Amount (L)", min_value=0.0, step=0.1, format="%.2f")
-        efficiency = st.number_input("Mash Efficiency (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
+        efficiency = st.number_input("Mash Efficiency (%)", min_value=30.0, max_value=100.0, step=0.1, format="%.1f")
         adjuncts = st.number_input("Adjuncts (% of grist)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
         duration = st.number_input("Mash Duration (min)", min_value=0, step=1)
 
