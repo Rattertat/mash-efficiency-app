@@ -13,6 +13,7 @@ import os
 # --- Helper Functions ---
 def load_data(uploaded_file):
     df = pd.read_excel(uploaded_file)
+    df["Mash Efficiency"] *= 100  # Convert to percent if in 0.xx format
     df["Grain/Water Ratio"] = df["Grist Amount"] / df["Water Amount"]
     return df
 
@@ -47,7 +48,7 @@ def plot_models(df, models):
         y_pred = model.predict(x_poly)
         plt.plot(x_range, y_pred, label=f'Degree {degree}')
     plt.xlabel("Grain/Water Ratio")
-    plt.ylabel("Mash Efficiency")
+    plt.ylabel("Mash Efficiency (%)")
     plt.title("Model Comparison")
     plt.legend()
     st.pyplot(plt)
