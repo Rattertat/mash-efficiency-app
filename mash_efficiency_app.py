@@ -87,7 +87,8 @@ elif choice == "Predict Efficiency":
             ratio = grain_amount / water_amount
             preds = predict_efficiency(models, ratio)
             for degree in sorted(preds):
-                st.write(f"Degree {degree} Prediction: Mash Efficiency {preds[degree]:.1f}%")
+                efficiency_percent = preds[degree] * 100  # convert from 0.xx to xx.x%
+                st.write(f"Degree {degree} Prediction: Mash Efficiency {efficiency_percent:.1f}%")
 
 elif choice == "View Model Comparison":
     st.subheader("📊 Model Fit Visualization")
