@@ -81,13 +81,13 @@ elif choice == "Predict Efficiency":
     except:
         st.warning("Please upload and train models first.")
     else:
-        grain_amount = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1)
-        water_amount = st.number_input("Water Amount (L)", min_value=0.0, step=0.1)
+        grain_amount = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1, format="%.2f")
+        water_amount = st.number_input("Water Amount (L)", min_value=0.0, step=0.1, format="%.2f")
         if water_amount > 0:
             ratio = grain_amount / water_amount
             preds = predict_efficiency(models, ratio)
             for degree in sorted(preds):
-                st.write(f"Degree {degree} Prediction: {preds[degree]:.1f}% Efficiency")
+                st.write(f"Degree {degree} Prediction: Mash Efficiency {preds[degree]:.1f}%")
 
 elif choice == "View Model Comparison":
     st.subheader("📊 Model Fit Visualization")
