@@ -85,8 +85,8 @@ if choice == "Upload & Train":
         df = pd.concat([df, new_df], ignore_index=True)
         st.success("File uploaded and processed.")
         safe_df = df.copy()
-safe_df["Date"] = pd.to_datetime(safe_df["Date"]).dt.strftime("%Y-%m-%d")
-st.dataframe(safe_df)
+        safe_df["Date"] = pd.to_datetime(safe_df["Date"]).dt.strftime("%Y-%m-%d")
+        st.dataframe(safe_df)
         X = df[["Grain/Water Ratio"]].values
         y = df["Mash Efficiency"].values
         models, scores = train_models(X, y)
@@ -159,7 +159,9 @@ elif choice == "View Batches":
         st.info("No batch data available yet.")
     else:
         edit_idx = st.number_input("Select batch index to edit/delete", min_value=0, max_value=len(df)-1, step=1)
-        st.dataframe(df)
+        safe_df = df.copy()
+        safe_df["Date"] = pd.to_datetime(safe_df["Date"]).dt.strftime("%Y-%m-%d")
+        st.dataframe(safe_df)
 
         with st.expander("✏️ Edit Selected Batch"):
             name = st.text_input("Batch Name", value=df.loc[edit_idx, "Batch Name"])
