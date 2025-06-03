@@ -57,14 +57,21 @@ def plot_models(df, models):
 st.set_page_config(page_title="Mash Efficiency Predictor")
 st.title("🍺 Mash Efficiency Predictor")
 
-menu = ["Predict Efficiency", "Upload & Train", "Add Single Batch", "View Model Comparison"]
+menu = ["Predict Efficiency", "Upload & Train", "Add Single Batch", "View Model Comparison", "View Batches"]
 choice = st.sidebar.selectbox("Navigation", menu)
+
+# Load or initialize data
+if os.path.exists("data.pkl"):
+    df = joblib.load("data.pkl")
+else:
+    df = pd.DataFrame()
 
 if choice == "Upload & Train":
     st.subheader("📤 Upload Historical Mash Data")
     uploaded_file = st.file_uploader("Choose Excel File", type=["xlsx"])
     if uploaded_file:
-        df = load_data(uploaded_file)
+        new_df = load_data(uploaded_file)
+        df = pd.concat([df, new_df], ignore_index=True)
         st.success("File uploaded and processed.")
         st.dataframe(df)
 
@@ -80,37 +87,32 @@ if choice == "Upload & Train":
 
 elif choice == "Add Single Batch":
     st.subheader("➕ Add a New Single Batch")
-    try:
-        df = joblib.load("data.pkl")
-    except:
-        st.warning("Please upload data first via 'Upload & Train'.")
-    else:
-        name = st.text_input("Batch Name")
-        date = st.date_input("Date")
-        grain = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1, format="%.2f")
-        water = st.number_input("Water Amount (L)", min_value=0.0, step=0.1, format="%.2f")
-        efficiency = st.number_input("Mash Efficiency (%)", min_value=30.0, max_value=100.0, step=0.1, format="%.1f")
-        adjuncts = st.number_input("Adjuncts (% of grist)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
-        duration = st.number_input("Mash Duration (min)", min_value=0, step=1)
+    name = st.text_input("Batch Name")
+    date = st.date_input("Date")
+    grain = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1, format="%.2f")
+    water = st.number_input("Water Amount (L)", min_value=0.0, step=0.1, format="%.2f")
+    efficiency = st.number_input("Mash Efficiency (%)", min_value=30.0, max_value=100.0, step=0.1, format="%.1f")
+    adjuncts = st.number_input("Adjuncts (% of grist)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
+    duration = st.number_input("Mash Duration (min)", min_value=0, step=1)
 
-        if st.button("Add Batch"):
-            new_row = pd.DataFrame({
-                "Batch Name": [name],
-                "Date": [date],
-                "Grist Amount": [grain],
-                "Water Amount": [water],
-                "Mash Efficiency": [efficiency],
-                "Adjuncts": [adjuncts],
-                "Mash Duration": [duration],
-                "Grain/Water Ratio": [grain / water if water > 0 else 0.0]
-            })
-            df = pd.concat([df, new_row], ignore_index=True)
-            joblib.dump(df, "data.pkl")
-            X = df[["Grain/Water Ratio"]].values
-            y = df["Mash Efficiency"].values
-            models, scores = train_models(X, y)
-            joblib.dump(models, "models.pkl")
-            st.success("New batch added and model updated.")
+    if st.button("Add Batch"):
+        new_row = pd.DataFrame({
+            "Batch Name": [name],
+            "Date": [date],
+            "Grist Amount": [grain],
+            "Water Amount": [water],
+            "Mash Efficiency": [efficiency],
+            "Adjuncts": [adjuncts],
+            "Mash Duration": [duration],
+            "Grain/Water Ratio": [grain / water if water > 0 else 0.0]
+        })
+        df = pd.concat([df, new_row], ignore_index=True)
+        joblib.dump(df, "data.pkl")
+        X = df[["Grain/Water Ratio"]].values
+        y = df["Mash Efficiency"].values
+        models, scores = train_models(X, y)
+        joblib.dump(models, "models.pkl")
+        st.success("New batch added and model updated.")
 
 elif choice == "Predict Efficiency":
     st.subheader("🔮 Predict Efficiency for a New Batch")
@@ -131,8 +133,14 @@ elif choice == "Predict Efficiency":
 elif choice == "View Model Comparison":
     st.subheader("📊 Model Fit Visualization")
     try:
-        df = joblib.load("data.pkl")
         models = joblib.load("models.pkl")
         plot_models(df, models)
     except Exception as e:
         st.warning(f"Error loading or plotting models: {e}")
+
+elif choice == "View Batches":
+    st.subheader("📋 Stored Batch Data")
+    if df.empty:
+        st.info("No batch data available yet.")
+    else:
+        st.dataframe(df)
