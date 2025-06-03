@@ -84,7 +84,9 @@ if choice == "Upload & Train":
         new_df = load_data(uploaded_file)
         df = pd.concat([df, new_df], ignore_index=True)
         st.success("File uploaded and processed.")
-        st.dataframe(df)
+        safe_df = df.copy()
+safe_df["Date"] = pd.to_datetime(safe_df["Date"]).dt.strftime("%Y-%m-%d")
+st.dataframe(safe_df)
         X = df[["Grain/Water Ratio"]].values
         y = df["Mash Efficiency"].values
         models, scores = train_models(X, y)
