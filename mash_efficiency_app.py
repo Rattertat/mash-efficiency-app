@@ -29,7 +29,7 @@ def train_models(X, y):
         model = LinearRegression().fit(X_poly, y)
         y_pred = model.predict(X_poly)
         r2 = r2_score(y, y_pred)
-        rmse = mean_squared_error(y, y_pred, squared=False)
+        rmse = np.sqrt(mean_squared_error(y, y_pred))
         adj_r2 = adjusted_r2(r2, len(y), X_poly.shape[1] - 1)
         models[degree] = (model, poly)
         scores[degree] = {"r2": r2, "adj_r2": adj_r2, "rmse": rmse}
