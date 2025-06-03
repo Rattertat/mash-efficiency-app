@@ -8,6 +8,7 @@ from sklearn.linear_model import LinearRegression
 from sklearn.preprocessing import PolynomialFeatures
 from sklearn.metrics import r2_score
 import joblib
+import os
 
 # --- Helper Functions ---
 def load_data(uploaded_file):
@@ -18,7 +19,7 @@ def load_data(uploaded_file):
 def train_models(X, y):
     models = {}
     scores = {}
-    
+
     for degree in [1, 2, 3]:
         poly = PolynomialFeatures(degree)
         X_poly = poly.fit_transform(X)
@@ -55,7 +56,7 @@ def plot_models(df, models):
 st.set_page_config(page_title="Mash Efficiency Predictor")
 st.title("🍺 Mash Efficiency Predictor")
 
-menu = ["Predict Efficiency", "Upload & Train", "View Model Comparison"]
+menu = ["Predict Efficiency", "Upload & Train", "Add Single Batch", "View Model Comparison"]
 choice = st.sidebar.selectbox("Navigation", menu)
 
 if choice == "Upload & Train":
@@ -72,7 +73,43 @@ if choice == "Upload & Train":
 
         best_degree = max(scores, key=scores.get)
         joblib.dump(models, "models.pkl")
+        joblib.dump(df, "data.pkl")
+
         st.success(f"Model training complete. Best degree: {best_degree} (R² = {scores[best_degree]:.3f})")
+
+elif choice == "Add Single Batch":
+    st.subheader("➕ Add a New Single Batch")
+    try:
+        df = joblib.load("data.pkl")
+    except:
+        st.warning("Please upload data first via 'Upload & Train'.")
+    else:
+        name = st.text_input("Batch Name")
+        date = st.date_input("Date")
+        grain = st.number_input("Grist Amount (kg)", min_value=0.0, step=0.1, format="%.2f")
+        water = st.number_input("Water Amount (L)", min_value=0.0, step=0.1, format="%.2f")
+        efficiency = st.number_input("Mash Efficiency (%)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
+        adjuncts = st.number_input("Adjuncts (% of grist)", min_value=0.0, max_value=100.0, step=0.1, format="%.1f")
+        duration = st.number_input("Mash Duration (min)", min_value=0, step=1)
+
+        if st.button("Add Batch"):
+            new_row = pd.DataFrame({
+                "Batch Name": [name],
+                "Date": [date],
+                "Grist Amount": [grain],
+                "Water Amount": [water],
+                "Mash Efficiency": [efficiency],
+                "Adjuncts": [adjuncts],
+                "Mash Duration": [duration],
+                "Grain/Water Ratio": [grain / water if water > 0 else 0.0]
+            })
+            df = pd.concat([df, new_row], ignore_index=True)
+            joblib.dump(df, "data.pkl")
+            X = df[["Grain/Water Ratio"]].values
+            y = df["Mash Efficiency"].values
+            models, scores = train_models(X, y)
+            joblib.dump(models, "models.pkl")
+            st.success("New batch added and model updated.")
 
 elif choice == "Predict Efficiency":
     st.subheader("🔮 Predict Efficiency for a New Batch")
@@ -87,17 +124,14 @@ elif choice == "Predict Efficiency":
             ratio = grain_amount / water_amount
             preds = predict_efficiency(models, ratio)
             for degree in sorted(preds):
-                efficiency_percent = preds[degree] * 100  # convert from 0.xx to xx.x%
+                efficiency_percent = preds[degree]
                 st.write(f"Degree {degree} Prediction: Mash Efficiency {efficiency_percent:.1f}%")
 
 elif choice == "View Model Comparison":
     st.subheader("📊 Model Fit Visualization")
     try:
-        df = pd.read_excel("/mnt/data/Mash-Efficiency-Prediction.xlsx")
-        df["Grain/Water Ratio"] = df["Grist Amount"] / df["Water Amount"]
-        X = df[["Grain/Water Ratio"]].values
-        y = df["Mash Efficiency"].values
-        models, _ = train_models(X, y)
+        df = joblib.load("data.pkl")
+        models = joblib.load("models.pkl")
         plot_models(df, models)
     except Exception as e:
         st.warning(f"Error loading or plotting models: {e}")
